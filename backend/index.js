@@ -2,52 +2,88 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const fs = require('fs');
+const path = require('path');
 const { sendEmail } = require('./notifications');
 const User = require('./models/User');
 const Incident = require('./models/Incident');
 
 const app = express();
 
-// Configura CORS para liberar apenas frontend localhost:3001
 app.use(cors({
   origin: 'http://localhost:3001',
 }));
 
 app.use(express.json());
 
-// Evita warning do strictQuery no Mongoose 6.x
 mongoose.set('strictQuery', true);
 
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
+  .then(() => console.log('MongoDB conectado'))
   .catch(err => console.error(err));
 
-// Criar novo incidente e notificar usuários
+// Rota para criar incidente, notificar usuários e gerar backup
 app.post('/incident', async (req, res) => {
   try {
     const { description = 'Incidente desconhecido' } = req.body;
+
     const incident = new Incident({ description });
     await incident.save();
 
     const users = await User.find();
+
     for (let u of users) {
-      await sendEmail(u.email, 'Notificação de Segurança - LGPD',
-        `Olá ${u.name},\n\nDetectamos: ${description}\nData: ${incident.timestamp}\n`);
+      await sendEmail(
+        u.email,
+        'Notificação de Segurança - LGPD',
+        `Olá ${u.name},\n\nDetectamos: ${description}\nData: ${incident.timestamp}\n`
+      );
+
       incident.notifications.push({
         userId: u._id,
         email: u.email,
         sentAt: new Date()
       });
     }
+
     await incident.save();
-    res.status(201).json({ status: 'ok', incidentId: incident._id });
+
+    // Backup automático
+    const backupData = {
+      backupAt: new Date(),
+      users: await User.find(),
+      incidents: await Incident.find()
+    };
+
+    const backupFilePath = path.join(__dirname, 'backup.json');
+    fs.writeFileSync(backupFilePath, JSON.stringify(backupData, null, 2));
+
+    console.log('✅ Backup salvo em:', backupFilePath);
+
+    res.status(201).json({ 
+      status: 'ok', 
+      message: 'Incidente registrado, usuários notificados e backup gerado.',
+      incidentId: incident._id,
+      backupFile: backupFilePath
+    });
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Erro interno' });
+    res.status(500).json({ error: 'Erro interno no servidor' });
   }
 });
 
-// Listar logs de notificações
+// Visualizar backup
+app.get('/backup', (req, res) => {
+  const backupFilePath = path.join(__dirname, 'backup.json');
+  if (fs.existsSync(backupFilePath)) {
+    res.sendFile(backupFilePath);
+  } else {
+    res.status(404).json({ error: 'Backup não encontrado' });
+  }
+});
+
+// Ver logs de notificações
 app.get('/logs', async (req, res) => {
   try {
     const incidents = await Incident.find().sort({ 'notifications.sentAt': -1 });
@@ -69,7 +105,7 @@ app.get('/logs', async (req, res) => {
   }
 });
 
-// Cadastrar usuário
+// Cadastro de usuário
 app.post('/register', async (req, res) => {
   try {
     const { name, email } = req.body;
@@ -93,4 +129,4 @@ app.post('/register', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server rodando na porta ${PORT}`));
