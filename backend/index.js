@@ -16,55 +16,70 @@ app.use(cors({
 
 app.use(express.json());
 
+// Proteção básica contra injeção 
+app.use((req, res, next) => {
+  const checkForInjection = obj => {
+    return Object.keys(obj).some(key => key.startsWith('$') || typeof obj[key] === 'object' && checkForInjection(obj[key]));
+  };
+
+  if (checkForInjection(req.body)) {
+    console.log('🚨 Tentativa de injeção NoSQL detectada');
+    handleIncident('Tentativa de Injeção NoSQL detectada');
+    return res.status(400).json({ error: 'Atividade maliciosa detectada. Usuários notificados.' });
+  }
+
+  next();
+});
+
 mongoose.set('strictQuery', true);
 
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB conectado'))
+  .then(() => console.log('✅ MongoDB conectado'))
   .catch(err => console.error(err));
 
-// Rota para criar incidente, notificar usuários e gerar backup
+async function handleIncident(description) {
+  const incident = new Incident({ description });
+  await incident.save();
+
+  const users = await User.find();
+
+  for (let u of users) {
+    await sendEmail(
+      u.email,
+      '🚨 Notificação de Segurança - LGPD',
+      `Olá ${u.name},\n\nDetectamos o seguinte incidente:\n${description}\nData: ${incident.timestamp}\n`
+    );
+
+    incident.notifications.push({
+      userId: u._id,
+      email: u.email,
+      sentAt: new Date()
+    });
+  }
+
+  await incident.save();
+
+  const backupData = {
+    backupAt: new Date(),
+    users: await User.find(),
+    incidents: await Incident.find()
+  };
+
+  const backupFilePath = path.join(__dirname, 'backup.json');
+  fs.writeFileSync(backupFilePath, JSON.stringify(backupData, null, 2));
+
+  console.log('✅ Backup salvo em:', backupFilePath);
+}
+
 app.post('/incident', async (req, res) => {
   try {
     const { description = 'Incidente desconhecido' } = req.body;
 
-    const incident = new Incident({ description });
-    await incident.save();
+    await handleIncident(description);
 
-    const users = await User.find();
-
-    for (let u of users) {
-      await sendEmail(
-        u.email,
-        'Notificação de Segurança - LGPD',
-        `Olá ${u.name},\n\nDetectamos: ${description}\nData: ${incident.timestamp}\n`
-      );
-
-      incident.notifications.push({
-        userId: u._id,
-        email: u.email,
-        sentAt: new Date()
-      });
-    }
-
-    await incident.save();
-
-    // Backup automático
-    const backupData = {
-      backupAt: new Date(),
-      users: await User.find(),
-      incidents: await Incident.find()
-    };
-
-    const backupFilePath = path.join(__dirname, 'backup.json');
-    fs.writeFileSync(backupFilePath, JSON.stringify(backupData, null, 2));
-
-    console.log('✅ Backup salvo em:', backupFilePath);
-
-    res.status(201).json({ 
-      status: 'ok', 
-      message: 'Incidente registrado, usuários notificados e backup gerado.',
-      incidentId: incident._id,
-      backupFile: backupFilePath
+    res.status(201).json({
+      status: 'ok',
+      message: 'Incidente registrado, usuários notificados e backup gerado.'
     });
 
   } catch (err) {
@@ -73,7 +88,6 @@ app.post('/incident', async (req, res) => {
   }
 });
 
-// Visualizar backup
 app.get('/backup', (req, res) => {
   const backupFilePath = path.join(__dirname, 'backup.json');
   if (fs.existsSync(backupFilePath)) {
@@ -83,7 +97,6 @@ app.get('/backup', (req, res) => {
   }
 });
 
-// Ver logs de notificações
 app.get('/logs', async (req, res) => {
   try {
     const incidents = await Incident.find().sort({ 'notifications.sentAt': -1 });
@@ -105,7 +118,6 @@ app.get('/logs', async (req, res) => {
   }
 });
 
-// Cadastro de usuário
 app.post('/register', async (req, res) => {
   try {
     const { name, email } = req.body;
