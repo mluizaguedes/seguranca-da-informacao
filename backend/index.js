@@ -4,15 +4,21 @@ const mongoose = require('mongoose');
 const { sendEmail } = require('./notifications');
 const User = require('./models/User');
 const Incident = require('./models/Incident');
-const { runBackup, restoreLatestBackup } = require('./backup');
+const { runBackup } = require('./backup');
+const { restoreLatestBackup } = require('./restore');
+const { cleanupOldBackups } = require('./cleanup');
 
 const app = express();
 app.use(express.json());
 
 // Middleware de detecção de NoSQL injection
 function payloadSuspeito(obj) {
-  return Object.keys(obj).some(key => key.startsWith('$') || (typeof obj[key]==='object' && payloadSuspeito(obj[key])));
+  return Object.keys(obj).some(key =>
+    key.startsWith('$') ||
+    (typeof obj[key] === 'object' && payloadSuspeito(obj[key]))
+  );
 }
+
 app.use((req, res, next) => {
   if (payloadSuspeito(req.body)) {
     handleIncident('Tentativa de Injeção NoSQL detectada').catch(console.error);
@@ -46,21 +52,30 @@ async function handleIncident(description) {
     console.error('❌ Erro ao restaurar backup:', err);
   }
 
-  // 4. Criar backup pós-incidente
-  try {
+  // 4. Criar backup pós-incidente para análise futura
+try {
     const { backupDir } = await runBackup();
     console.log('✅ Backup pós-incidente concluído em:', backupDir);
   } catch (err) {
-    console.error('❌ Erro ao criar backup:', err);
+    console.error('❌ Erro ao criar backup pós-incidente:', err);
   }
 }
 
 // Rota para disparar incidente manual
 app.post('/incident', async (req, res) => {
-  const { description='Incidente manual'} = req.body;
+  const { description = 'Incidente manual' } = req.body;
   try {
     await handleIncident(description);
     res.status(200).json({ message: 'Incidente tratado: restauração e backup executados.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/backup', async (req, res) => {
+  try {
+    await runBackup();
+    res.status(200).json({ message: 'Backup executado com sucesso.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
