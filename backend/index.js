@@ -39,7 +39,14 @@ async function handleIncident(description) {
   // 2. Notificar usuários
   const users = await User.find();
   for (const u of users) {
-    await sendEmail(u.email, '🚨 Incidente de Segurança', `Olá ${u.name}, detectamos: ${description}`);
+    await sendEmail(u.email, '🚨 Incidente de Segurança',   
+    `Olá ${u.name},
+
+    Detectamos uma atividade maliciosa no sistema. Por precaução, restauramos seus dados com base no último backup confiável.
+
+    Caso tenha dúvidas, entre em contato com a equipe técnica.
+
+    Equipe de Segurança`);
     incident.notifications.push({ userId: u._id, email: u.email, sentAt: new Date() });
   }
   await incident.save();
