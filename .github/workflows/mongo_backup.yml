@@ -1,0 +1,32 @@
+name: Backup Diário MongoDB
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Todo dia às 2h UTC
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Instalar mongodump
+      run: sudo apt-get install -y mongodb-clients
+
+    - name: Criar backup
+      run: |
+        mkdir -p backend/backup
+        TIMESTAMP=$(date -u +"%Y-%m-%dT%H-%M-%SZ")
+        mongodump --uri="${{ secrets.MONGO_URI }}" --out="backend/backup/dump-$TIMESTAMP"
+
+    - name: Upload backup artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: mongo-backup
+        path: backend/backup/
+
+    - name: Limpar artifacts antigos (90 dias)
+      uses: filipball/gha-artifact-cleaner@v1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        days: 90
