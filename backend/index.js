@@ -1,142 +1,70 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
 const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
 const { sendEmail } = require('./notifications');
 const User = require('./models/User');
 const Incident = require('./models/Incident');
+const { runBackup, restoreLatestBackup } = require('./backup');
 
 const app = express();
-
-app.use(cors({
-  origin: 'http://localhost:3001',
-}));
-
 app.use(express.json());
 
-// Proteção básica contra injeção 
+// Middleware de detecção de NoSQL injection
+function payloadSuspeito(obj) {
+  return Object.keys(obj).some(key => key.startsWith('$') || (typeof obj[key]==='object' && payloadSuspeito(obj[key])));
+}
 app.use((req, res, next) => {
-  const checkForInjection = obj => {
-    return Object.keys(obj).some(key => key.startsWith('$') || typeof obj[key] === 'object' && checkForInjection(obj[key]));
-  };
-
-  if (checkForInjection(req.body)) {
-    console.log('🚨 Tentativa de injeção NoSQL detectada');
-    handleIncident('Tentativa de Injeção NoSQL detectada');
-    return res.status(400).json({ error: 'Atividade maliciosa detectada. Usuários notificados.' });
+  if (payloadSuspeito(req.body)) {
+    handleIncident('Tentativa de Injeção NoSQL detectada').catch(console.error);
+    return res.status(400).json({ error: 'Atividade maliciosa detectada.' });
   }
-
   next();
 });
 
-mongoose.set('strictQuery', true);
-
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB conectado'))
-  .catch(err => console.error(err));
+  .catch(console.error);
 
 async function handleIncident(description) {
+  // 1. registrar incidente
   const incident = new Incident({ description });
   await incident.save();
 
+  // 2. notificar usuário
   const users = await User.find();
-
-  for (let u of users) {
-    await sendEmail(
-      u.email,
-      '🚨 Notificação de Segurança - LGPD',
-      `Olá ${u.name},\n\nDetectamos o seguinte incidente:\n${description}\nData: ${incident.timestamp}\n`
-    );
-
-    incident.notifications.push({
-      userId: u._id,
-      email: u.email,
-      sentAt: new Date()
-    });
+  for (const u of users) {
+    await sendEmail(u.email, '🚨 Incidente de Segurança', `Olá ${u.name}, detectamos: ${description}`);
+    incident.notifications.push({ userId: u._id, email: u.email, sentAt: new Date() });
   }
-
   await incident.save();
 
-  const backupData = {
-    backupAt: new Date(),
-    users: await User.find(),
-    incidents: await Incident.find()
-  };
+  // 3. restaurar último backup antes da correção
+  try {
+    const { restoredDir } = await restoreLatestBackup();
+    console.log('✅ Restaurado backup:', restoredDir);
+  } catch (err) {
+    console.error('❌ Erro ao restaurar backup:', err);
+  }
 
-  const backupFilePath = path.join(__dirname, 'backup.json');
-  fs.writeFileSync(backupFilePath, JSON.stringify(backupData, null, 2));
-
-  console.log('✅ Backup salvo em:', backupFilePath);
+  // 4. gerar novo backup pós-incidente
+  try {
+    const { backupDir } = await runBackup();
+    console.log('✅ Backup imediato concluído em:', backupDir);
+  } catch (err) {
+    console.error('❌ Erro no backup:', err);
+  }
 }
 
+// Rota para disparar incidente manual
 app.post('/incident', async (req, res) => {
+  const { description='Incidente manual'} = req.body;
   try {
-    const { description = 'Incidente desconhecido' } = req.body;
-
     await handleIncident(description);
-
-    res.status(201).json({
-      status: 'ok',
-      message: 'Incidente registrado, usuários notificados e backup gerado.'
-    });
-
+    res.status(200).json({ message: 'Incidente tratado: restauração e backup executados.' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro interno no servidor' });
-  }
-});
-
-app.get('/backup', (req, res) => {
-  const backupFilePath = path.join(__dirname, 'backup.json');
-  if (fs.existsSync(backupFilePath)) {
-    res.sendFile(backupFilePath);
-  } else {
-    res.status(404).json({ error: 'Backup não encontrado' });
-  }
-});
-
-app.get('/logs', async (req, res) => {
-  try {
-    const incidents = await Incident.find().sort({ 'notifications.sentAt': -1 });
-    const result = [];
-    incidents.forEach(inc => {
-      inc.notifications.forEach(n => {
-        result.push({
-          incidentId: inc._id,
-          description: inc.description,
-          email: n.email,
-          sentAt: n.sentAt
-        });
-      });
-    });
-    res.json(result);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro interno' });
-  }
-});
-
-app.post('/register', async (req, res) => {
-  try {
-    const { name, email } = req.body;
-    if (!name || !email) {
-      return res.status(400).json({ error: 'Nome e email são obrigatórios' });
-    }
-
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ error: 'Usuário já cadastrado' });
-    }
-
-    const user = new User({ name, email });
-    await user.save();
-
-    res.status(201).json({ message: 'Usuário cadastrado com sucesso', user });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro interno' });
+    res.status(500).json({ error: err.message });
   }
 });
 
