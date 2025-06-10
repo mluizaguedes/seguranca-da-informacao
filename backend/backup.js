@@ -14,15 +14,21 @@ function runBackup() {
     fs.mkdirSync(backupDir);
 
     const cmd = `mongodump --uri="${mongoUri}" --out="${backupDir}"`;
-    exec(cmd, (err) => {
+    
+    exec(cmd, (err, stdout, stderr) => {
       if (err) {
         console.error('❌ Erro no backup:', err.message);
+        console.error('stderr:', stderr);
         return reject(err);
       }
       console.log('✅ Backup criado em:', backupDir);
       resolve({ backupDir });
     });
   });
+}
+
+if (require.main === module) {
+  runBackup().catch(console.error);
 }
 
 module.exports = { runBackup };
