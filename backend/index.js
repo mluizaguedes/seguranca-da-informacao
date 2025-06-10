@@ -1,8 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const fs = require('fs');
-const path = require('path');
 const { sendEmail } = require('./notifications');
 const User = require('./models/User');
 const Incident = require('./models/Incident');
@@ -28,11 +26,11 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(console.error);
 
 async function handleIncident(description) {
-  // 1. registrar incidente
+  // 1. Registrar incidente
   const incident = new Incident({ description });
   await incident.save();
 
-  // 2. notificar usuário
+  // 2. Notificar usuários
   const users = await User.find();
   for (const u of users) {
     await sendEmail(u.email, '🚨 Incidente de Segurança', `Olá ${u.name}, detectamos: ${description}`);
@@ -40,7 +38,7 @@ async function handleIncident(description) {
   }
   await incident.save();
 
-  // 3. restaurar último backup antes da correção
+  // 3. Restaurar o último backup
   try {
     const { restoredDir } = await restoreLatestBackup();
     console.log('✅ Restaurado backup:', restoredDir);
@@ -48,12 +46,12 @@ async function handleIncident(description) {
     console.error('❌ Erro ao restaurar backup:', err);
   }
 
-  // 4. gerar novo backup pós-incidente
+  // 4. Criar backup pós-incidente
   try {
     const { backupDir } = await runBackup();
-    console.log('✅ Backup imediato concluído em:', backupDir);
+    console.log('✅ Backup pós-incidente concluído em:', backupDir);
   } catch (err) {
-    console.error('❌ Erro no backup:', err);
+    console.error('❌ Erro ao criar backup:', err);
   }
 }
 
