@@ -1,0 +1,21 @@
+/*modal configCookies*/
+.modal-overlay {
+  position: fixed; /* Fica fixo na tela inteira */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5); /* Fundo escuro semi-transparente */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* Bem acima de todos os outros elementos */
+}
+
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0px 4px 20px rgba(0,0,0,0.25);
+  z-index: 10000; /* Também precisa estar no topo */
+}
