@@ -19,75 +19,92 @@ Trabalho da disciplina Segurança da Informação
   
 ## 🔐 Notificação
 
-Simula um sistema de detecção de incidentes de segurança. Ele representa uma situação onde, ao ocorrer uma tentativa de invasão, o sistema realiza três ações principais de forma automática:
+Este projeto simula uma solução automatizada de segurança para proteção de dados sensíveis armazenados em um banco MongoDB, integrando backup local, detecção de injeção NoSQL, restauração automática e notificação por email aos usuários.
 
-- 🔔 **Notifica todos os usuários cadastrados via email.**
-- 💾 **Gera um backup completo do banco de dados (usuários e incidentes).**
-- 🗒️ **Registra o incidente no banco de dados para consulta posterior.**
-
----
-
-### ✅ Funcionamento 
+## ✅ Funcionalidades
 
 | Ação | Descrição |
-| --- | --- |
-| `index.js` | Backend que gerencia usuários, incidentes, logs e backups. |
-| `triggerIncident.js` | Simula uma invasão, dispara o incidente, envia notificações e gera backup. |
-| **Backup automático** | Gera `backup.json` com dados de usuários e incidentes sempre que há ataque. Por segurança, o backup está incluído no `.gitignore` para **não subir no GitHub**. |
-| **Notificação automática por email** | Todos os usuários recebem email sobre o incidente assim que ele ocorre. |
+|------|-----------|
+| 🛡️ Detecção de ataque | Middleware detecta tentativas de injeção NoSQL nos endpoints |
+| 📦 Backup automático | Geração diária de backup via script `.bat` agendado no Windows |
+| 🔁 Restauração | Em caso de ataque, restaura automaticamente o último backup |
+| ✉️ Notificação por email | Envia email corporativo a todos os usuários em caso de incidente |
+| 🗂️ Registro de incidentes | Salva cada incidente no banco com lista de usuários notificados |
 
----
+## 📁 Estrutura de Arquivos
 
-### 🚀 Tecnologias utilizadas
+```
+backend/
+├── backup.js              # Função para criar backups
+├── cleanup.js             # Remove backups antigos (>90 dias)
+├── restore.js             # Restaura último backup válido
+├── triggerIncident.js     # Simula invasão (ou pode ser usado em produção via POST /incident)
+├── index.js               # API principal com middleware de segurança
+├── notifications.js       # Envio de email usando Nodemailer
+├── models/
+│   ├── User.js            # Modelo de usuário
+│   └── Incident.js        # Modelo de incidente
+├── backup_diario.bat      # Script agendável para backup diário via Task Scheduler
+├── limpeza.bat            # Script de limpeza automática dos backups antigos
+├── .env                   # Variáveis de ambiente (oculto)
+└── README.md              # Este arquivo
+```
 
-- **Node.js** (servidor backend)
-- **Express** (API REST)
-- **MongoDB + Mongoose** (banco de dados)
-- **Nodemailer** (envio de emails de notificação)
-- **Axios** (usado no script de simulação da invasão)
+## 💼 Caso de Uso: Detecção de Invasão
 
-### 📁 Estrutura
-- [Backend](https://github.com/juliagonzalezmoreira/seguranca-da-informacao/tree/main/backend)	/ API REST em Node.js com MongoDB.
-- [Frontend](https://github.com/juliagonzalezmoreira/seguranca-da-informacao/tree/main/frontend)	/ Interface React.
-- ```README.md```  Informações do projeto.
+Se for detectada uma tentativa de injeção maliciosa no corpo da requisição, o sistema:
 
----
+1. Registra o incidente no MongoDB
+2. Envia um **email corporativo** para todos os usuários explicando o ocorrido e instruções para segurança
+3. Restaura o banco de dados a partir do backup mais recente
+4. Gera um novo backup pós-incidente para análise futura
+
+## 🛠️ Tecnologias Utilizadas
+
+- Node.js + Express (API)
+- MongoDB + Mongoose (Banco de dados)
+- Nodemailer (Envio de emails)
+- Axios (Simulação de ataque)
+- Windows Task Scheduler (Agendamento de scripts .bat)
+- `mongodump` (CLI oficial do MongoDB para backups)
+
 <details>
-<summary> ⚙️ Como rodar o projeto </summary>
+  <summary> ⚙️ Como Rodar</summary>
 
-### 🔧 1️⃣ Instale as dependências:
+### 1️⃣ Instale as dependências
 
 ```bash
 npm install
 ```
 
----
+### 2️⃣ Configure seu `.env`:
 
-### 🔑 2️⃣ Configure o arquivo `.env` com seus dados:
-
+```env
+MONGO_URI=mongodb+srv://<usuario>:<senha>@<cluster>.mongodb.net/<banco>
+MAIL_HOST=smtp.mailserver.com
+MAIL_PORT=587
+MAIL_USER=your_email@example.com
+MAIL_PASS=your_email_password
+BACKUP_DIR=caminho\para\salvar\backups
 ```
-MONGO_URI=mongodb://localhost:27017/seu-banco
-EMAIL_USER=seuemail@gmail.com
-EMAIL_PASS=sua-senha-de-app
-```
 
-> ⚠️ Observação: Use uma senha de aplicativo para Gmail ou outro serviço SMTP. 
+> ⚠️ Use uma senha de aplicativo para Gmail ou SMTP corporativo
 
----
-
-### ▶️ 3️⃣ Inicie o backend:
+### 3️⃣ Inicie o servidor
 
 ```bash
-node index.js
+npm start
 ```
 
-### 💥 Como simular uma invasão
-
-Execute o script:
+### 4️⃣ Teste o incidente
 
 ```bash
 node triggerIncident.js
 ```
+
+## 🗓️ Backup Diário Automático
+
+Configure o **Agendador de Tarefas do Windows** para rodar o arquivo `backup_diario.bat` diariamente.
 
 </details>
 
