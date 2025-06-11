@@ -86,9 +86,7 @@ node triggerIncident.js
 1. **Registra o incidente no banco**
 2. **Envia e-mails de alerta para todos os usuários cadastrados**
 3. **Restaura o backup mais recente**
-4. **Cria um novo backup pós-restauração**
-5. **Executa a limpeza de backups antigos (90+ dias)**
-
+4. **Cria um novo backup pós-restauração para análise**
 ---
 
 ## 📫 Notificação aos Usuários
