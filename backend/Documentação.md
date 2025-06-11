@@ -94,15 +94,33 @@ node triggerIncident.js
 Cada usuário receberá um e-mail com o seguinte conteúdo:
 
 ```
-Assunto: 🚨 Incidente de Segurança
+Assunto: ⚠️ Comunicado Urgente: Incidente de Segurança envolvendo seus dados, 
+    Prezado(a) {Usuário},
 
-Olá [Nome do usuário],
+      Estamos entrando em contato para informar que, infelizmente, sofremos um incidente de segurança que resultou no acesso não autorizado aos nossos sistemas.
 
-Detectamos uma atividade maliciosa no sistema. Por precaução, restauramos seus dados com base no último backup confiável.
+      Após investigação interna, identificamos que dados pessoais e sensíveis de nossos usuários foram expostos, incluindo, mas não se limitando a:
+      - Nome completo
+      - Endereço de e-mail
+      - Informações de identificação (CPF, endereço, entre outros, caso cadastrados)
+      - Dados de login e acesso ao sistema
 
-Caso tenha dúvidas, entre em contato com a equipe técnica.
+      Lamentamos profundamente a situação e assumimos total responsabilidade pelo ocorrido. Imediatamente após a detecção do ataque, nossos sistemas executaram procedimentos
+automatizados de contenção, restauração do backup mais recente e reforço da segurança da aplicação.
 
-Equipe de Segurança
+      O que você deve fazer agora:
+      1. Troque imediatamente sua senha de acesso à plataforma.
+      2. Monitore seus e-mails e contas associadas.
+      3. Desconfie de qualquer mensagem suspeita solicitando seus dados.
+      4. Em caso de uso indevido das suas informações, nos comunique e registre um boletim de ocorrência.
+
+      Nosso canal de atendimento está disponível para suporte:
+      suporte@empresa.com.br | 0800 000 0000
+
+      Pedimos desculpas pelo transtorno causado e reiteramos nosso compromisso com a transparência, responsabilidade e proteção dos seus dados.
+
+      Atenciosamente,
+      Equipe de Segurança da Informação.
 ```
 
 ---
