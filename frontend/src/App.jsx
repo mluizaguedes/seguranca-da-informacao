@@ -13,7 +13,7 @@ import Historico from './components/Historico';
 import Termos from './pages/politicas/Termos';
 import PoliticaDePrivacidade from './pages/politicas/PoliticaPrivacidade';
 import Footer from './components/Footer';
-import EditarTermos from './components/EditarTermos'; 
+import EditarTermos from './pages/admin/EditarTermos';
 
 function App() {
   const [user, setUser] = useState(null);
