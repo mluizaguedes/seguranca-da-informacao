@@ -16,12 +16,12 @@ export default function Footer({ onOpenPrivacySettings }) {
             TERMOS DE USO
           </Link>
           {' '}
-          <button
+          <span
             onClick={onOpenPrivacySettings}
-            className="hover:underline hover:text-blue-600"
+            className="text-gray-600 hover:underline hover:text-blue-600 cursor-pointer"
           >
             CONFIGURAÇÕES DE PRIVACIDADE
-          </button>
+          </span>
         </div>
       </div>
     </footer>

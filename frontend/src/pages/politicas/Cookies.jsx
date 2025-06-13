@@ -1,5 +1,5 @@
 import React from "react";
-import "../../components/index.css";
+import "./index.css";
 
 export default function PoliticaDeCookies() {
   return (

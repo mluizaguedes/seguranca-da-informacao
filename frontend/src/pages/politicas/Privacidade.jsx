@@ -1,10 +1,12 @@
 import React from "react";
-import "../../components/index.css";
+import "./index.css";
 
 export default function PoliticaDePrivacidade() {
   return (
     <div className="max-w-4xl mx-auto p-6 text-gray-800">
-      <h1 className="text-2xl font-bold mb-4">Política de Privacidade</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        Política de Privacidade
+      </h1>
 
       <p className="mb-4">Atualizado em 05 de Junho de 2025</p>
 
@@ -139,7 +141,8 @@ export default function PoliticaDePrivacidade() {
       </p>
 
       <p className="mb-4">
-        ✔ Ao continuar usando nosso site, você concorda com esta Política de Privacidade.
+        ✔ Ao continuar usando nosso site, você concorda com esta Política de
+        Privacidade.
       </p>
 
       <p className="mt-8 text-sm text-gray-500">

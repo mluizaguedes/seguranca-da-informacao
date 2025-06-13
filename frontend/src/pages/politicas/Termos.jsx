@@ -1,10 +1,12 @@
 import React from "react";
-import "../../components/index.css";
+import "./index.css";
 
 export default function Termos() {
   return (
     <div className="max-w-4xl mx-auto p-6 text-gray-800">
-      <h1 className="text-2xl font-bold mb-4">Termos de Uso</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        Termos de Uso
+      </h1>
 
       <p className="mb-4">Atualizado em 05 de Junho de 2025</p>
 
@@ -119,7 +121,8 @@ export default function Termos() {
       </p>
 
       <p className="mt-8 text-sm text-gray-500">
-        Se você tiver dúvidas, entre em contato conosco por e-mail: site@exemplo.com
+        Se você tiver dúvidas, entre em contato conosco por e-mail:
+        site@exemplo.com
       </p>
     </div>
   );
