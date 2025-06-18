@@ -1,23 +1,38 @@
-# Segurança da Informação
-Trabalho da disciplina Segurança da Informação
+<h1 align="center">
+ 🔒 Segurança da Informação
+</h1>
 
-## Integrantes:
+<p align="center">
+	<b><i>
+Trabalho da disciplina Segurança da Informação 
+  </i></b>
+</p>
+
+<p align="center">
+	<img alt="Tamanho do código no GitHub em bytes" src="https://img.shields.io/github/languages/code-size/juliagonzalezmoreira/seguranca-da-informacao?color=6272a4" />
+	<img alt="Linguagem principal" src="https://img.shields.io/github/languages/top/juliagonzalezmoreira/seguranca-da-informacao?color=6272a4"/>
+</p>
+
+## 💡 Sobre o projeto
+
+### 👥 Integrantes:
 * Julia Gonzalez
 * Maria Luiza Guedes
 * Sofia Lessa
   
-## Itens LGPD
-1. Portabilidade
+### 📍 Itens LGPD
+1. Transparência
 2. OPT-IN
-3. Transparência
+3. Notificação
 
+---
 
 <details>
-  <summary> 🔐 Notificação </summary>
+  <summary> 📢 Notificação </summary>
   
   ---
   
-## 🔐 Notificação
+## 📢 Notificação
 
 Este projeto simula uma solução automatizada de segurança para proteção de dados sensíveis armazenados em um banco MongoDB, integrando backup local, detecção de injeção NoSQL, restauração automática e notificação por email aos usuários.
 
