@@ -158,17 +158,17 @@ A tabela a seguir detalha a estrutura dos modelos `User` e `Curso`, com informa�
 
 ### ✅ OPT-IN/OPT-OUT
 
-Este projeto implementa a coleta e gestão de consentimentos conforme a Lei Geral de Proteção de Dados (LGPD). Todos os consentimentos são versionados, permitindo que o usuário aceite/revogue termos por categoria e acompanhe o histórico de alterações.
+Este projeto implementa um sistema completo de gestão de consentimento, em conformidade com a LGPD. Os usuários podem aceitar ou recusar termos agrupados por categorias: obrigatórios (opt-in obrigatório) e opcionais (opt-in e opt-out) - com controle total sobre suas escolhas.
 
 ### Funcionalidades
 
 | Ação | Descrição |
 |------|-----------|
-| 📄 Termos Dinâmicos | Admins podem criar novas versões de termos com categorias separadas |
-| 👤 Cadastro com Consentimento | O usuário precisa aceitar os termos obrigatórios no momento do cadastro |
-| 🧾 Banner de Atualização | Se uma nova versão de termos for publicada, o usuário verá um banner para aceitar |
-| 📌 Histórico de Privacidade | Exibe todas as versões aceitas, revogações e respostas do usuário |
-| 🔄 Revogação e Alteração | Usuário pode alterar preferências de opt-in/opt-out a qualquer momento |
+| ✍️ Versões Dinâmicas | Administradores podem criar versões de termos com categorias separadas |
+| 📝 Cadastro com Consentimento | O usuário precisa aceitar os termos obrigatórios no momento do cadastro |
+| 🔔 Banner de Atualização | Se uma nova versão de termos for publicada, o usuário verá um banner para aceitar |
+| 📑 Histórico de Privacidade | Exibição completa de todas as versões aceitas, revogações e respostas do usuário |
+| 🔄 Gerenciamento de Preferências | Usuário pode ajustar consentimentos a qualquer momento no perfil |
 
 ### Modelagem dos Termos
 
@@ -202,24 +202,16 @@ Já o modelo `Consentimento` salva a resposta do usuário com base na versão:
 
 ### Interface de Consentimento
 
-- Cadastro: o formulário exige que os termos obrigatórios sejam aceitos. Os termos opcionais podem ser selecionados livremente.
-- Perfil: o usuário visualiza um banner de atualização sempre que houver uma nova versão. Também pode revogar ou ajustar consentimentos no modal de privacidade.
+- No cadastro: termos obrigatórios devem ser aceitos; os opcionais (opt-in/out) são livres.
+- No perfil: o usuário pode revisar e atualizar seus consentimentos a qualquer momento.
+- Banner: aparece automaticamente quando há uma nova versão disponível.
 
 ### Caso de Uso: Gestão de Consentimento
 
-- O administrador publica a versão 2.0 dos termos.
-- O usuário, ao acessar seu perfil, visualiza o banner com os novos termos.
-- O usuário pode aceitar todos, revisar os opt-in/opt-out, ou recusar os obrigatórios (o que bloqueia o uso).
-- Todas as alterações são salvas no modelo Consentimento e registradas no HistoricoLog.
-
-### Tecnologias Utilizadas
-
-* **Backend:** Node.js, Express
-* **Banco de Dados:** MongoDB, Mongoose
-* **Frontend:** React, JavaScript, Tailwind CSS
-* **Autenticação:** JSON Web Tokens (JWT)
-
----
+1. Admin publica a versão 2.0 dos termos.
+2. Usuário visualiza banner de atualização ao acessar o perfil.
+3. Ele pode aceitar os termos, modificar preferências ou revogar consentimentos.
+4. Todas as alterações são registradas em Consentimento e HistoricoLog.
 
 <details>
   <summary> ⚙️ Como Rodar</summary>
