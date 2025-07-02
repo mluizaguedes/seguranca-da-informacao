@@ -2,13 +2,23 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const { sendEmail } = require('./notifications');
-const User = require('./models/User');
 const Incident = require('./models/Incident');
 const { runBackup } = require('./backup');
 const { restoreLatestBackup } = require('./restore');
 const { cleanupOldBackups } = require('./cleanup');
+const cors = require("cors");
+
+const UserController = require("./controllers/UserController");
 
 const app = express();
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 // Middleware de detecção de NoSQL injection
@@ -27,9 +37,21 @@ app.use((req, res, next) => {
   next();
 });
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ MongoDB conectado'))
-  .catch(console.error);
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(async () => {
+    console.log("MongoDB conectado");
+    await atualizarCachePoliticas();
+
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => console.log(`Server rodando na porta ${PORT}`));
+  })
+  .catch((err) => {
+    console.error("Erro ao conectar ao MongoDB:", err.message);
+    process.exit(1); 
+  });
+
+app.use("/", UserController);
 
 async function handleIncident(description) {
   // 1. Registrar incidente
@@ -106,6 +128,3 @@ app.post('/backup', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server rodando na porta ${PORT}`));
