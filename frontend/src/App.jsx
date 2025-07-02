@@ -11,8 +11,6 @@ import LogTable from './components/LogTable';
 import Footer from './components/layout/Footer';
 import ConfigPrivacidade from './components/config.privacidade/ConfigPrivacidade';
 
-import PoliticaDePrivacidade from './pages/politicas/Privacidade';
-import TermosDeUso from './pages/politicas/TermosDeUso';
 import Perfil from './pages/perfil';
 import PerfilAdmin from './pages/admin/PerfilAdmin';
 
@@ -48,11 +46,9 @@ function App() {
         <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
         <Route path="/perfil-admin" element={<PrivateRoute><PerfilAdmin /></PrivateRoute>} />
         <Route path="/log-table" element={<LogTable />} />
-        <Route path="/termos-de-uso" element={<TermosDeUso />} />
-        <Route path="/politica-de-privacidade" element={<PoliticaDePrivacidade />} />
       </Routes>
 
-      {storedUser && <Footer userId={storedUser.id} />}
+      <Footer />
 
     </Router>
   );

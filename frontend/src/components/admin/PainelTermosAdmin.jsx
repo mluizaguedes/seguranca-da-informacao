@@ -175,7 +175,7 @@ export default function PainelTermosAdmin() {
                   {v.termos.map((termo, idx) => (
                     <li key={idx} className="text-gray-700">
                       <span className="font-semibold">
-                        [{termo.tipo === "obrigatorio" ? "Obrigatório" : "Opt-in"}] {termo.titulo}
+                        [{termo.tipo === "optIn" ? "Opcional" : "Obrigatório"}] {termo.titulo}
                       </span>
                       <p className="text-sm text-gray-600">{termo.descricao}</p>
                     </li>

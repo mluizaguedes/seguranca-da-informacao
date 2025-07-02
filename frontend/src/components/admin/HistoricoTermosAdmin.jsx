@@ -55,15 +55,19 @@ export default function HistoricoTermosAdmin({ adminId }) {
                 <td className="px-4 py-2">{log.detalhes?.versao || "-"}</td>
                 <td className="px-4 py-2 break-words max-w-md">
                   <ul className="list-disc pl-4 space-y-1 text-xs text-gray-700">
-                    {todosTermos.map((termo, index) => (
-                      <li key={index}>
-                        <span className="font-medium capitalize">
-                          [{termo.tipo}] {termo.titulo}
-                        </span>
-                        <br />
-                        <span className="text-gray-600">{termo.descricao}</span>
-                      </li>
-                    ))}
+                    {todosTermos.map((termo, index) => {
+                      const tipoFormatado = termo.tipo === "optIn" ? "opcional" : "obrigatório";
+
+                      return (
+                        <li key={index}>
+                          <span className="font-medium capitalize">
+                            [{tipoFormatado}] {termo.titulo}
+                          </span>
+                          <br />
+                          <span className="text-gray-600">{termo.descricao}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </td>
                 <td className="px-4 py-2">

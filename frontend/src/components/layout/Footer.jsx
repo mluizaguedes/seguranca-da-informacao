@@ -9,25 +9,6 @@ export default function Footer() {
           <p className="text-sm text-center md:text-left">
             © {new Date().getFullYear()} Faculdade Exemplo. Todos os direitos reservados.
           </p>
-          <div className="flex gap-4 mt-4 md:mt-0 text-sm">
-            <a
-              href="/politica-de-privacidade"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:underline hover:text-blue-600"
-            >
-              POLÍTICA DE PRIVACIDADE
-            </a>
-            {' '}
-            <a
-              href="/termos-de-uso"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:underline hover:text-blue-600"
-            >
-              TERMOS DE USO
-            </a>
-          </div>
         </div>
       </footer>
     </>
