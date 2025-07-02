@@ -22,7 +22,7 @@ Trabalho da disciplina Segurança da Informação
   
 ### 📍 Itens LGPD
 1. Transparência
-2. OPT-IN
+2. OPT-IN/OPT-OUT
 3. Notificação
 
 ---
@@ -149,6 +149,142 @@ A tabela a seguir detalha a estrutura dos modelos `User` e `Curso`, com informa�
 </details>
 
 </details>
+
+
+<details>
+  <summary> ✅ OPT-IN/OPT-OUT </summary>
+  
+  ---
+
+### ✅ OPT-IN/OPT-OUT
+
+Este projeto implementa a coleta e gestão de consentimentos conforme a Lei Geral de Proteção de Dados (LGPD). Todos os consentimentos são versionados, permitindo que o usuário aceite/revogue termos por categoria e acompanhe o histórico de alterações.
+
+### Funcionalidades
+
+| Ação | Descrição |
+|------|-----------|
+| 📄 Termos Dinâmicos | Admins podem criar novas versões de termos com categorias separadas |
+| 👤 Cadastro com Consentimento | O usuário precisa aceitar os termos obrigatórios no momento do cadastro |
+| 🧾 Banner de Atualização | Se uma nova versão de termos for publicada, o usuário verá um banner para aceitar |
+| 📌 Histórico de Privacidade | Exibe todas as versões aceitas, revogações e respostas do usuário |
+| 🔄 Revogação e Alteração | Usuário pode alterar preferências de opt-in/opt-out a qualquer momento |
+
+### Modelagem dos Termos
+
+O modelo `TermoVersao` armazena os textos agrupados por tipo:
+
+```
+{
+  versao: "1.1",
+  termos: {
+    obrigatorio: [{ id, titulo, descricao }],
+    opcionais: [{ id, titulo, descricao }],
+  }
+}
+
+```
+
+Já o modelo `Consentimento` salva a resposta do usuário com base na versão:
+
+```
+{
+  userId: ObjectId,
+  versao: "1.1",
+  respostas: Map {
+    "id_termo1": true,
+    "id_termo2": false
+  },
+  isCurrent: true
+}
+
+```
+
+### Interface de Consentimento
+
+- Cadastro: o formulário exige que os termos obrigatórios sejam aceitos. Os termos opcionais podem ser selecionados livremente.
+- Perfil: o usuário visualiza um banner de atualização sempre que houver uma nova versão. Também pode revogar ou ajustar consentimentos no modal de privacidade.
+
+### Caso de Uso: Gestão de Consentimento
+
+- O administrador publica a versão 2.0 dos termos.
+- O usuário, ao acessar seu perfil, visualiza o banner com os novos termos.
+- O usuário pode aceitar todos, revisar os opt-in/opt-out, ou recusar os obrigatórios (o que bloqueia o uso).
+- Todas as alterações são salvas no modelo Consentimento e registradas no HistoricoLog.
+
+### Tecnologias Utilizadas
+
+* **Backend:** Node.js, Express
+* **Banco de Dados:** MongoDB, Mongoose
+* **Frontend:** React, JavaScript, Tailwind CSS
+* **Autenticação:** JSON Web Tokens (JWT)
+
+---
+
+<details>
+  <summary> ⚙️ Como Rodar</summary>
+
+#### Backend
+
+1. Acesse `backend`:
+
+   ```bash
+   cd backend
+   ```
+2. Instale dependências:
+
+   ```bash
+   npm install
+   ```
+3. Crie `.env` seguindo o template:
+
+  ```env
+  MONGO_URI=mongodb+srv://<usuario>:<senha>@<cluster>.mongodb.net/<banco>
+  MAIL_HOST=smtp.mailserver.com
+  MAIL_PORT=587
+  MAIL_USER=your_email@example.com
+  MAIL_PASS=your_email_password
+  BACKUP_DIR=caminho\para\salvar\backups
+  JWT_SECRET="coloque uma chave aqui"
+  ```
+
+4. Inicie o servidor:
+
+   ```bash
+   node index.js
+   ```
+
+#### Frontend
+
+1. Acesse `frontend`:
+
+   ```bash
+   cd frontend
+   ```
+2. Instale dependências:
+
+   ```bash
+   npm install
+   ```
+3. Inicie o servidor de desenvolvimento:
+
+   ```bash
+   npm run dev
+   ```
+
+---
+</details>
+
+### 🛡️ Conformidade com LGPD
+- Consentimento livre, informado e inequívoco
+- Registro claro de quando e quais termos foram aceitos
+- Permissão de revogação e modificação dos consentimentos
+- Separação entre dados obrigatórios e opcionais
+
+</br>
+
+</details>
+
 
 <details>
   <summary> 📢 Notificação </summary>
