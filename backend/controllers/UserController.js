@@ -5,20 +5,18 @@ const mongoose = require('mongoose');
 
 const User = require('../models/User');
 const Curso = require('../models/Curso');
-const Politica = require('../models/Politicas');
 const Consentimento = require('../models/Consentimento');
+const TermoVersao = require('../models/TermoVersao');
 const HistoricoLog = require('../models/HistoricoLog');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const { montarDetalhesConsentimento } = require('../utils/politicasCache');
-
 // Rota de cadastro de usuário
 router.post('/cadastro', async (req, res) => {
   try {
-    const { nome, email, senha, dataNascimento, curso: cursoId, telefones = [], sexo, optInNews = false, optInShare = false, termosAceitos = { uso: false, privacidade: false } } = req.body;
+    const { nome, email, senha, dataNascimento, curso: cursoId, telefones = [], sexo, versao, respostas } = req.body;
 
     // Validações básicas
     if (!nome || !email || !senha || !cursoId) {
@@ -52,40 +50,37 @@ router.post('/cadastro', async (req, res) => {
     // Incrementar contagem de alunos no curso
     await Curso.updateOne({ _id: cursoId }, { $inc: { totalAlunos: 1 } });
 
-    // Buscar versões atuais das políticas
-    const termoUsoAtual = await Politica.findOne({ tipo: 'uso' }).sort({ atualizadoEm: -1 });
-    const privacidadeAtual = await Politica.findOne({ tipo: 'privacidade' }).sort({ atualizadoEm: -1 });
-    if (!termoUsoAtual || !privacidadeAtual) {
-      return res.status(400).json({ error: 'Versões das políticas não encontradas' });
+    let versaoAtual = null;
+
+    if (versao) {
+      versaoAtual = await TermoVersao.findOne({ versao });
+      if (!versaoAtual) {
+        return res.status(400).json({ error: "Versão de termos não encontrada." });
+      }
     }
 
-    // Criar consentimento inicial
-    await Consentimento.create({
-      userId: user._id,
-      consentimento: {
-        optInNews,
-        optInShare,
-        termosAceitos,
-        versaoTermoUso: termoUsoAtual.versao,
-        versaoPrivacidade: privacidadeAtual.versao,
-        isCurrent: true
-      }
-    });
+    if (versaoAtual) {
+      const obrigatorios = versaoAtual.termos?.obrigatorio || [];
+      const obrigatoriosNaoAceitos = obrigatorios.filter(t => !respostas[t.id]);
 
-    // Registrar no histórico
-    await HistoricoLog.create({
-      userId: user._id,
-      acao: 'CONSENTIMENTO_ATUALIZADO',
-      detalhes: montarDetalhesConsentimento({
-        optInNews,
-        optInShare,
-        termosAceitos,
-        versaoTermoUso: termoUsoAtual.versao,
-        versaoPrivacidade: privacidadeAtual.versao,
+      if (obrigatoriosNaoAceitos.length > 0) {
+        return res.status(400).json({ error: "Você deve aceitar todos os termos obrigatórios." });
+      }
+
+      await Consentimento.create({
+        userId: user._id,
+        versao,
+        respostas: new Map(Object.entries(respostas)),
         isCurrent: true
-      }, 'cadastro'),
-      origem: 'cadastro'
-    });
+      });
+
+      await HistoricoLog.create({
+        userId: user._id,
+        acao: 'CONSENTIMENTO_ATUALIZADO',
+        detalhes: { versao, respostas },
+        origem: 'cadastro'
+      });
+    }
 
     // Responder
     const newUser = await User.findById(user._id)
@@ -111,8 +106,18 @@ router.post('/login', async (req, res) => {
     const isMatch = await bcrypt.compare(senha, aluno.senha);
     if (!isMatch) return res.status(401).json({ error: 'Credenciais inválidas.' });
 
-    const token = jwt.sign({ id: aluno._id, role: aluno.role }, JWT_SECRET, { expiresIn: '14d' });
-    return res.status(200).json({ token, user: { id: aluno._id, nome: aluno.nome, email: aluno.email, role: aluno.role } });
+    // Gera token incluindo isAdmin
+    const token = jwt.sign({ id: aluno._id, isAdmin: aluno.isAdmin }, JWT_SECRET, { expiresIn: '14d' });
+
+    return res.status(200).json({ 
+      token, 
+      user: { 
+        id: aluno._id, 
+        nome: aluno.nome, 
+        email: aluno.email, 
+        isAdmin: aluno.isAdmin 
+      } 
+    });
   } catch (err) {
     console.error('Erro ao logar:', err);
     return res.status(500).json({ error: 'Não foi possível fazer o login.' });

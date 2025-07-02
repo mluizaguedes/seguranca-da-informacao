@@ -8,6 +8,9 @@ const { restoreLatestBackup } = require('./restore');
 const { cleanupOldBackups } = require('./cleanup');
 const cors = require("cors");
 
+const TermoVersaoController = require("./controllers/TermoVersaoController");
+const ConsentimentoController = require("./controllers/ConsentimentoController");
+const HistoricoLogController = require("./controllers/HistoricoLogController");
 const UserController = require("./controllers/UserController");
 
 const app = express();
@@ -23,6 +26,8 @@ app.use(express.json());
 
 // Middleware de detecção de NoSQL injection
 function payloadSuspeito(obj) {
+  if (!obj || typeof obj !== 'object') return false;
+
   return Object.keys(obj).some(key =>
     key.startsWith('$') ||
     (typeof obj[key] === 'object' && payloadSuspeito(obj[key]))
@@ -41,7 +46,6 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(async () => {
     console.log("MongoDB conectado");
-    await atualizarCachePoliticas();
 
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => console.log(`Server rodando na porta ${PORT}`));
@@ -51,6 +55,9 @@ mongoose
     process.exit(1); 
   });
 
+app.use("/", ConsentimentoController);
+app.use("/", HistoricoLogController);
+app.use("/", TermoVersaoController);
 app.use("/", UserController);
 
 async function handleIncident(description) {
