@@ -4,7 +4,6 @@ import EditablePhoneList from "../../components/EditablePhoneList";
 import EditableEmergencyContact from "../../components/EditableEmergencyContact";
 import HistoricoPrivacidade from "../../components/config.privacidade/Historico";
 import BannerTermosAtualizados from "../../components/config.privacidade/BannerTermosAtualizados";
-import BannerConsentimentoRevogado from "../../components/config.privacidade/BannerConsentimentoRevogado";
 import ConfigPrivacidade from "../../components/config.privacidade/ConfigPrivacidade";
 import { useModal } from '../../contexts/ModalContext';
 import { UserRound } from "lucide-react";
@@ -13,9 +12,6 @@ export default function Perfil() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editedPhones, setEditedPhones] = useState([]);
-  const politicas = ["uso", "privacidade"];
-  const [politicasAtualizadas, setPoliticasAtualizadas] = useState({ uso: false, privacidade: false });
-  const [versoesAtualizadas, setVersoesAtualizadas] = useState({ uso: null, privacidade: null });
   const [consentimentoRevogado, setConsentimentoRevogado] = useState(false);
   const { showPrivacySettings, setShowPrivacySettings, privacyUserId, setPrivacyUserId } = useModal();
   const userId = user?.id || user?._id;
@@ -52,79 +48,36 @@ export default function Perfil() {
 
     verificarConsentimento();
   }, []);
+  
+  const [termosVersaoAtual, setTermosVersaoAtual] = useState(null);
+  const [mostrarBannerTermos, setMostrarBannerTermos] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
-
-    async function verificarPoliticas() {
+    async function checarVersaoTermos() {
       try {
         const token = localStorage.getItem("token");
-        const consentimentoRes = await api.get(`/consentimento/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const consentimento = consentimentoRes.data;
+        const [consentRes, termosRes] = await Promise.all([
+          api.get(`/consentimento/${userId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          api.get(`/termos/versao-atual`)
+        ]);
 
-        if (!consentimento || !consentimento.isCurrent) return;
+        const consentimento = consentRes.data;
+        const versaoAtual = termosRes.data;
 
-        // Verifica se há versões mais recentes que ele não aceitou ainda
-        const novosBanners = {};
-        const novasVersoes = {};
+        setTermosVersaoAtual(versaoAtual);
 
-        for (const tipo of politicas) {
-          const politicaRes = await api.get(`/politicas/${tipo}`);
-          const versaoAtual = politicaRes.data.versao;
-          novasVersoes[tipo] = versaoAtual;
-
-          const campoConsentimento =
-            tipo === "uso"
-              ? "versaoTermoUso"
-              : tipo === "privacidade"
-                ? "versaoPrivacidade"
-                : null;
-
-          const versaoUsuario = consentimento[campoConsentimento];
-          novosBanners[tipo] = versaoAtual !== versaoUsuario;
+        if (!consentimento || consentimento.versao !== versaoAtual.versao) {
+          setMostrarBannerTermos(true);
         }
-
-        setVersoesAtualizadas(novasVersoes);
-        setPoliticasAtualizadas(novosBanners);
-
-        localStorage.setItem("versaoTermoUso", novasVersoes.uso);
-        localStorage.setItem("versaoPrivacidade", novasVersoes.privacidade);
       } catch (err) {
-        console.error("Erro ao verificar versões das políticas:", err);
+        console.error("Erro ao verificar versão dos termos:", err);
       }
     }
 
-    verificarPoliticas();
-  }, [user]);
-
-  const aceitarPolitica = async (tipo) => {
-    try {
-      const token = localStorage.getItem("token");
-      const dadosAtualizacao = { consentimento: {} };
-
-      if (tipo === "uso") {
-        dadosAtualizacao.consentimento.versaoTermoUso = versoesAtualizadas.uso;
-      }
-      if (tipo === "privacidade") {
-        dadosAtualizacao.consentimento.versaoPrivacidade = versoesAtualizadas.privacidade;
-      }
-
-      await api.put(`/consentimento/${userId}`, dadosAtualizacao, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setPoliticasAtualizadas((prev) => ({ ...prev, [tipo]: false }));
-    } catch (err) {
-      console.error(`Erro ao aceitar política ${tipo}:`, err);
-      alert("Erro ao registrar consentimento. Tente novamente.");
-    }
-  };
-
-  const fecharBanner = (tipo) => {
-    setPoliticasAtualizadas((prev) => ({ ...prev, [tipo]: false }));
-  };
+    if (userId) checarVersaoTermos();
+  }, [userId]);
 
   useEffect(() => {
     async function fetchUser() {
@@ -221,21 +174,11 @@ export default function Perfil() {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      {politicasAtualizadas.uso && (
+      {mostrarBannerTermos && termosVersaoAtual && (
         <BannerTermosAtualizados
-          tipo="uso"
+          versaoAtual={termosVersaoAtual}
           userId={user._id}
-          onAceitar={() => aceitarPolitica("uso")}
-          onClose={() => fecharBanner("uso")}
-        />
-      )}
-
-      {politicasAtualizadas.privacidade && (
-        <BannerTermosAtualizados
-          tipo="privacidade"
-          userId={user._id}
-          onAceitar={() => aceitarPolitica("privacidade")}
-          onClose={() => fecharBanner("privacidade")}
+          onFechar={() => setMostrarBannerTermos(false)}
         />
       )}
 

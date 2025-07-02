@@ -26,7 +26,11 @@ export default function Login() {
             localStorage.setItem('user', JSON.stringify(user))
             console.log("user:", user)
 
-            navigate('/Perfil')
+            if (user.isAdmin) {
+                navigate('/perfil-admin');
+            } else {
+                navigate('/perfil');
+            }
         } catch (err) {
             console.error('Erro no login:', err)
             const msg = err.response?.data?.message || 'Erro ao fazer login.'

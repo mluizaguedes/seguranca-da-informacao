@@ -9,7 +9,7 @@ export default function Cadastro() {
   const formRef = useRef();
   const [telefones, setTelefones] = useState([""]);
   const [cursos, setCursos] = useState([]);
-  const [versoesPoliticas, setVersoesPoliticas] = useState({ termoUso: null, privacidade: null });
+  const [versoesPoliticas, setVersoesPoliticas] = useState({ versao: null, termos: {} });
   const [showSenha, setShowSenha] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -21,9 +21,7 @@ export default function Cadastro() {
   const cursoRef = useRef();
   const sexoRef = useRef();
 
-  const [optInNews, setOptInNews] = useState(false);
-  const [optInShare, setOptInShare] = useState(false);
-  const [termosAceitos, setTermosAceitos] = useState({ uso: false, privacidade: false });
+  const [termosAceitos, setTermosAceitos] = useState({});
 
   const opcoesSexo = [
     'Homem cisgênero',
@@ -34,9 +32,29 @@ export default function Cadastro() {
   ];
 
   useEffect(() => {
-    api.get("/politicas/versoes")
-      .then((res) => setVersoesPoliticas(res.data))
-      .catch((err) => console.error("Erro ao carregar versões das políticas:", err));
+    async function carregarTermos() {
+      try {
+        const res = await api.get("/termos/versao-atual");
+        console.log("Resposta dos termos:", res.data);
+
+        const termosAgrupados = res.data.termos || {};
+
+        setVersoesPoliticas({ versao: res.data.versao, termos: termosAgrupados });
+
+        const respostasIniciais = {};
+        Object.values(termosAgrupados).forEach((arr) => {
+          arr.forEach((t) => {
+            respostasIniciais[t.id] = false;
+          });
+        });
+        setTermosAceitos(respostasIniciais);
+
+      } catch (err) {
+        console.error("Erro ao carregar versão atual dos termos:", err);
+      }
+    }
+
+    carregarTermos();
 
     api.get("/cursos")
       .then((res) => setCursos(res.data))
@@ -103,15 +121,16 @@ export default function Cadastro() {
     validateSenha();
     validateConfirmarSenha();
 
-    if (Object.values(errors).some(msg => msg)) return;
-
-    if (!versoesPoliticas.termoUso || !versoesPoliticas.privacidade) {
-      alert("Aguarde o carregamento das versões das políticas antes de enviar.");
+    if (Object.values(errors).some(msg => msg)) {
+      alert("Por favor, corrija os erros no formulário antes de enviar.");
       return;
     }
 
-    if (!termosAceitos.uso || !termosAceitos.privacidade) {
-      alert("Você precisa aceitar os Termos de Uso e a Política de Privacidade.");
+    const obrigatorios = versoesPoliticas.termos.obrigatorio || [];
+    const todosObrigatoriosAceitos = obrigatorios.every(t => termosAceitos[t.id] === true);
+
+    if (!todosObrigatoriosAceitos) {
+      alert("Você precisa aceitar todos os termos obrigatórios.");
       return;
     }
 
@@ -123,21 +142,23 @@ export default function Cadastro() {
       curso: cursoRef.current.value,
       sexo: sexoRef.current.value,
       telefones: telefones.filter((t) => t.trim()),
-      optInNews,
-      optInShare,
-      termosAceitos,
-      versaoTermoUso: versoesPoliticas.termoUso,
-      versaoPrivacidade: versoesPoliticas.privacidade,
+      versao: versoesPoliticas.versao, 
+      respostas: termosAceitos         
     };
 
     try {
+      console.log("Payload enviado:", payload);
+
       await api.post("/cadastro", payload);
       alert("Cadastro realizado com sucesso.");
       formRef.current.reset();
       setTelefones([""]);
-      setOptInNews(false);
-      setOptInShare(false);
-      setTermosAceitos({ uso: false, privacidade: false });
+
+      const resetTermos = {};
+      Object.keys(termosAceitos).forEach(key => {
+        resetTermos[key] = false;
+      });
+      setTermosAceitos(resetTermos);
       setErrors({ nome: '', email: '', senha: '', confirmarSenha: '', curso: '' });
     } catch (err) {
       console.error(err);
@@ -298,65 +319,36 @@ export default function Cadastro() {
           </button>
         </div>
 
-        {/* Opt‑ins */}
-        <div className="space-y-4 mt-6">
-          <div className="border border-gray-200 rounded-md p-3">
-            <label className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                checked={optInNews}
-                onChange={(e) => setOptInNews(e.target.checked)}
-                className="mt-1"
-              />
-              <div>
-                <p className="font-medium">Quero receber novidades e avisos por e-mail (Opcional)</p>
-                <p className="text-sm text-gray-600">Permite o envio de novidades, atualizações e comunicados.</p>
-              </div>
-            </label>
-          </div>
-          <div className="border border-gray-200 rounded-md p-3">
-            <label className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                checked={optInShare}
-                onChange={(e) => setOptInShare(e.target.checked)}
-                className="mt-1"
-              />
-              <div>
-                <p className="font-medium">Autorizo o compartilhamento de meus dados com parceiros (Opcional)</p>
-                <p className="text-sm text-gray-600">Você pode revogar esta permissão a qualquer momento.</p>
-              </div>
-            </label>
-          </div>
-        </div>
         {/* Termos */}
-        <div className="border border-gray-200 rounded-md p-3 mt-4">
-          <label className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              checked={termosAceitos.uso}
-              onChange={(e) => setTermosAceitos((p) => ({ ...p, uso: e.target.checked }))}
-              className="mt-1"
-            />
-            <p className="font-medium">Eu concordo com os <Link to="/termos-de-uso" className="text-blue-500 underline" target="_blank">Termos de Uso</Link> (Obrigatório)</p>
-          </label>
-        </div>
-        <div className="border border-gray-200 rounded-md p-3 mt-2">
-          <label className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              checked={termosAceitos.privacidade}
-              onChange={(e) => setTermosAceitos((p) => ({ ...p, privacidade: e.target.checked }))}
-              className="mt-1"
-            />
-            <p className="font-medium">Eu concordo com a <Link to="/politica-de-privacidade" className="text-blue-500 underline" target="_blank">Política de Privacidade</Link> (Obrigatório)</p>
-          </label>
-        </div>
+        {['obrigatorio', 'optin', 'optout'].map((tipo) =>
+          (versoesPoliticas.termos[tipo] || []).map((termo) => (
+            <div key={termo.id} className="border border-gray-200 rounded-md p-3 mt-4">
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={termosAceitos[termo.id] || false}
+                  onChange={(e) =>
+                    setTermosAceitos((prev) => ({
+                      ...prev,
+                      [termo.id]: e.target.checked,
+                    }))
+                  }
+                  className="mt-1"
+                />
+                <p className="font-medium">
+                  {termo.titulo} {tipo === 'obrigatorio' ? '(Obrigatório)' : '(Opcional)'}
+                </p>
+              </label>
+              <p className="font-medium text-xs text-gray-600 mt-1">{termo.descricao}</p>
+            </div>
+          ))
+        )}
+
         <button
           type="submit"
           className="w-full mt-6 py-2 px-4 bg-gray-800 text-white rounded-md hover:bg-gray-700"
         >Cadastrar-se</button>
-      </form >
+      </form>
       <Link to="/login" className="text-blue-500 hover:underline mt-4 block text-center">Já tem uma conta? Faça login</Link>
       <p className="text-xs text-gray-500 mt-4 text-center">Seus dados são tratados conforme a LGPD.</p>
     </div >
