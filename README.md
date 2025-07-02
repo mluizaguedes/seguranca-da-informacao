@@ -28,6 +28,129 @@ Trabalho da disciplina Segurança da Informação
 ---
 
 <details>
+  <summary> Transparência </summary>
+
+  ---
+  
+## Transparência
+
+Este projeto implementa um portal universitário com foco em **transparência** por meio de um sistema **CRUD** (Create, Read, Update). Os usuários podem gerenciar completamente suas contas como se cadastrar, atualizar e visualizar suas informções, garantindo controle total sobre seus dados.
+
+## Funcionalidades
+
+| Ação       | Descrição                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------- |
+| **CREATE** | Cadastro de nova conta com informações básicas (nome, e-mail, data de nascimento, sexo).                    |
+| **READ**   | Exibição detalhada dos dados do usuário na página **Perfil**, incluindo as informações do curso do usuário. |
+| **UPDATE** | Permite edição de qualquer campo cadastrado a qualquer momento.                                             |
+
+---
+
+## Tabela de Modelagem de Dados
+
+A tabela a seguir detalha a estrutura dos modelos `User` e `Curso`, com informações sobre cada campo, seu tipo, obrigatoriedade e considerações sobre a LGPD.
+
+### Modelo `User`
+
+| Campo | Tipo de Dado | Obrigatório | Descrição e Finalidade | Implicações da LGPD |
+| --- | --- | --- | --- | --- |
+| `nome` | String | Sim | Nome completo do usuário. | Dado pessoal comum, essencial para identificação. |
+| `email` | String | Sim | Endereço de e-mail do usuário. | Dado pessoal comum, usado para login e comunicação. |
+| `senha` | String | Sim | Senha do usuário. | Dado pessoal comum, **armazenada com hash.** |
+| `dataNascimento` | Date | Não | Data de nascimento do usuário. | Dado pessoal, coleta opcional. |
+| `sexo` | String (enum) | Não | Gênero do usuário. | **Dado pessoal sensível,** coleta opcional. |
+| `curso` | ObjectId (ref: 'Curso') | Sim | ID do curso do usuário. | Dado pessoal comum, essencial para a funcionalidade. |
+| `telefones` | Array de `telefoneSchema` | Não | Lista de telefones do usuário. | Dado pessoal comum, coleta opcional. |
+| `contatoEmergencia` | `contatoEmergenciaSchema` | Não | Contato de emergência do usuário. | **Dado pessoal de terceiro.** Coleta opcional, com base legal clara. |
+
+### Modelo `Curso`
+
+| Campo | Tipo de Dado | Obrigatório | Descrição e Finalidade | Implicações da LGPD |
+| --- | --- | --- | --- | --- |
+| `nome` | String | Sim | Nome do curso. | Não é um dado pessoal. |
+| `modalidade` | String | Sim | Modalidade do curso. | Não é um dado pessoal. |
+| `turno` | String | Sim | Turno do curso. | Não é um dado pessoal. |
+| `duracao` | String | Sim | Duração do curso. | Não é um dado pessoal. |
+| `totalAlunos` | Number | Não | Total de alunos no curso. | Dado agregado. Não é um dado pessoal. |
+
+
+---
+
+## 💡 Caso de Uso: Transparência de Dados do Usuário
+
+1. **Cadastro:** Usuário se cadastra para acessar o site da faculdade, apenas os campos básicos como nome, email, senha e curso são obrigatórios no registro. 
+2. **Login:** Usuário acessa o portal com e-mail e senha.
+3. **Dados Pessoais:** Ao logar, o usuário visualiza todas suas informações.
+4. **Edição Dados:** Na página de Perfil o usuário tem permissão para editar seus dados.
+
+---
+
+## 🛠️ Tecnologias
+
+* **Backend:** Node.js, Express
+* **Banco de Dados:** MongoDB, Mongoose
+* **Frontend:** React, JavaScript, Tailwind CSS
+* **Autenticação:** JSON Web Tokens (JWT)
+
+---
+
+<details>
+  <summary> ⚙️ Como Rodar</summary>
+
+### 🖥️ Backend
+
+1. Acesse `backend`:
+
+   ```bash
+   cd backend
+   ```
+2. Instale dependências:
+
+   ```bash
+   npm install
+   ```
+3. Crie `.env` seguindo o template:
+
+  ```env
+  MONGO_URI=mongodb+srv://<usuario>:<senha>@<cluster>.mongodb.net/<banco>
+  MAIL_HOST=smtp.mailserver.com
+  MAIL_PORT=587
+  MAIL_USER=your_email@example.com
+  MAIL_PASS=your_email_password
+  BACKUP_DIR=caminho\para\salvar\backups
+  JWT_SECRET="coloque uma chave aqui"
+  ```
+
+4. Inicie o servidor:
+
+   ```bash
+   node index.js
+   ```
+
+### 🌐 Frontend
+
+1. Acesse `frontend`:
+
+   ```bash
+   cd frontend
+   ```
+2. Instale dependências:
+
+   ```bash
+   npm install
+   ```
+3. Inicie o servidor de desenvolvimento:
+
+   ```bash
+   npm run dev
+   ```
+
+---
+</details>
+
+</details>
+
+<details>
   <summary> 📢 Notificação </summary>
   
   ---
