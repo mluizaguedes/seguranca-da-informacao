@@ -8,7 +8,11 @@ export default function HistoricoTermosAdmin({ adminId }) {
   useEffect(() => {
     async function fetchAdminLogs() {
       try {
-        const res = await api.get(`/historico-logs?userId=${adminId}&acao=TERMO_VERSAO_CRIADA`);
+        const token = localStorage.getItem("token"); // ⚠️ importante
+        const res = await api.get(
+          `/historico-logs?userId=${adminId}&acao=TERMO_VERSAO_CRIADA`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setLogs(res.data);
       } catch (err) {
         console.error("Erro ao buscar histórico do admin:", err);
@@ -31,21 +35,45 @@ export default function HistoricoTermosAdmin({ adminId }) {
             <th className="px-4 py-2 text-left">Data</th>
             <th className="px-4 py-2 text-left">Versão</th>
             <th className="px-4 py-2 text-left">Termos</th>
+            <th className="px-4 py-2 text-left">Criado por</th>
           </tr>
         </thead>
         <tbody className="text-gray-800 text-sm">
-          {logs.map((log) => (
-            <tr key={log._id} className="border-t hover:bg-gray-50 transition">
-              <td className="px-4 py-2">{new Date(log.createdAt).toLocaleString()}</td>
-              <td className="px-4 py-2">{log.detalhes?.versao || '-'}</td>
-              <td className="px-4 py-2 break-words max-w-sm">
-                <pre className="whitespace-pre-wrap text-xs text-gray-600">
-                  {JSON.stringify(log.detalhes?.termos, null, 2)}
-                </pre>
-              </td>
-            </tr>
-          ))}
+          {logs.map((log) => {
+            const termosAgrupados = log.detalhes?.termos || {};
+            const todosTermos = Object.entries(termosAgrupados).flatMap(
+              ([tipo, termos]) =>
+                termos.map((termo) => ({
+                  ...termo,
+                  tipo,
+                }))
+            );
+
+            return (
+              <tr key={log._id} className="border-t hover:bg-gray-50 transition">
+                <td className="px-4 py-2">{new Date(log.createdAt).toLocaleString()}</td>
+                <td className="px-4 py-2">{log.detalhes?.versao || "-"}</td>
+                <td className="px-4 py-2 break-words max-w-md">
+                  <ul className="list-disc pl-4 space-y-1 text-xs text-gray-700">
+                    {todosTermos.map((termo, index) => (
+                      <li key={index}>
+                        <span className="font-medium capitalize">
+                          [{termo.tipo}] {termo.titulo}
+                        </span>
+                        <br />
+                        <span className="text-gray-600">{termo.descricao}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </td>
+                <td className="px-4 py-2">
+                  {log.userId?.nome || log.userId?.email || "Desconhecido"}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
+
       </table>
     </div>
   );

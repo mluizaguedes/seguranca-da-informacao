@@ -165,15 +165,26 @@ export default function PainelTermosAdmin() {
         {versoes.length === 0 ? (
           <p className="text-sm text-gray-500">Nenhuma versão encontrada.</p>
         ) : (
-          <ul className="text-sm list-disc pl-5 space-y-1">
+          <ul className="text-sm space-y-4">
             {versoes.map((v) => (
-              <li key={v._id}>
-                <span className="font-medium">{v.versao}</span> -{" "}
-                {new Date(v.publicadoEm || v.createdAt).toLocaleString()} -{" "}
-                {v.termos.length} termos
+              <li key={v._id} className="border rounded p-4 bg-gray-50">
+                <p className="font-medium text-gray-800">
+                  Versão {v.versao} - {new Date(v.publicadoEm || v.createdAt).toLocaleString()}
+                </p>
+                <ul className="pl-4 mt-2 space-y-2">
+                  {v.termos.map((termo, idx) => (
+                    <li key={idx} className="text-gray-700">
+                      <span className="font-semibold">
+                        [{termo.tipo === "obrigatorio" ? "Obrigatório" : "Opt-in"}] {termo.titulo}
+                      </span>
+                      <p className="text-sm text-gray-600">{termo.descricao}</p>
+                    </li>
+                  ))}
+                </ul>
               </li>
             ))}
           </ul>
+
         )}
       </section>
     </div>

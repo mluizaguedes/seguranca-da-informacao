@@ -118,8 +118,9 @@ router.get("/termos/versao-atual", async (req, res) => {
 router.get('/termos/versoes', auth, isAdmin, async (req, res) => {
   try {
     const versoes = await TermoVersao.find()
-      .sort({ publicadoEm: -1, createdAt: -1 }) 
-      .select('versao publicadoEm termos createdAt'); 
+      .sort({ publicadoEm: -1, createdAt: -1 })
+      .select('versao publicadoEm termos criadoPor createdAt') 
+      .populate('criadoPor', 'nome email'); 
 
     res.json(versoes);
   } catch (err) {

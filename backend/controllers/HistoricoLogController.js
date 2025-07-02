@@ -128,4 +128,24 @@ router.get('/termos/versoes', auth, isAdmin, async (req, res) => {
   }
 });
 
+router.get("/historico-logs", auth, isAdmin, async (req, res) => {
+  try {
+    const { userId, acao } = req.query;
+
+    const filtros = {};
+    if (userId) filtros.userId = userId;
+    if (acao) filtros.acao = acao;
+
+    const logs = await HistoricoLog.find(filtros)
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .populate("userId", "nome email");
+
+    res.json(logs);
+  } catch (err) {
+    console.error("Erro ao buscar logs:", err);
+    res.status(500).json({ error: "Erro ao buscar histórico de logs" });
+  }
+});
+
 module.exports = router;
